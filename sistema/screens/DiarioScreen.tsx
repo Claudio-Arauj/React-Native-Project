@@ -17,6 +17,8 @@ import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
 import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import globalStyles from '../styles/globalStyles'; // ou o caminho correspondente
+
 
 export default function DiarioScreen() {
   const hoje = moment().format('YYYY-MM-DD');
@@ -191,10 +193,12 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   fabContainer: {
+    flex: 1,
     position: 'absolute',
     right: 20,
     bottom: 30,
     alignItems: 'flex-end',
+    paddingBottom: 90,
   },
   fab: {
     backgroundColor: '#2b8a3e',
