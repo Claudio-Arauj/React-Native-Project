@@ -6,6 +6,7 @@ export default StyleSheet.create({
     backgroundColor: '#fff',
     paddingTop: 40,
     paddingHorizontal: 20,
+    paddingBottom: 90, // ← altura da sua navbar + margem
   },
   titulo: {
     fontSize: 24,
