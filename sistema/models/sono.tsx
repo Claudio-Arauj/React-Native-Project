@@ -15,18 +15,4 @@ export class Sono {
     this.horarioDormir = horarioDormir;
     this.notificacoesAtivas = notificacoesAtivas;
   }
-
-  static fromDb(row: {
-    id: string;
-    usuario_id: string;
-    horario_dormir: string;
-    notificacoes_ativas?: boolean | null;
-  }): Sono {
-    return new Sono(
-      row.id,
-      row.usuario_id,
-      row.horario_dormir,
-      row.notificacoes_ativas ?? true
-    );
-  }
 }

@@ -18,20 +18,4 @@ export class Notificacao {
     this.mensagem = mensagem;
     this.enviadaEm = enviadaEm;
   }
-
-  static fromDb(row: {
-    id: string;
-    usuario_id: string;
-    tipo: string;
-    mensagem: string;
-    enviada_em: string;
-  }): Notificacao {
-    return new Notificacao(
-      row.id,
-      row.usuario_id,
-      row.tipo,
-      row.mensagem,
-      new Date(row.enviada_em)
-    );
-  }
 }
