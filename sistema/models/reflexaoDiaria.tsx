@@ -18,20 +18,4 @@ export class ReflexaoDiaria {
     this.sentimento = sentimento;
     this.texto = texto;
   }
-
-  static fromDb(row: {
-    id: string;
-    usuario_id: string;
-    data: string;
-    texto?: string | null;
-    sentimento: number;
-  }): ReflexaoDiaria {
-    return new ReflexaoDiaria(
-      row.id,
-      row.usuario_id,
-      new Date(row.data),
-      row.sentimento,
-      row.texto ?? undefined
-    );
-  }
 }
