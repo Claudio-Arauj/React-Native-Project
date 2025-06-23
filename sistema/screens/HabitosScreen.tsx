@@ -157,7 +157,7 @@ const estilos = StyleSheet.create({
     position: 'absolute',
     bottom: 140,
     right: 20,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#2b8a3e',
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 30,
