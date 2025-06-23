@@ -1,11 +1,11 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import MainTabs from './navigation/MainTabs';
+import AuthStack from './routes/AuthStack';
 
 export default function App() {
   return (
     <NavigationContainer>
-      <MainTabs />
+      <AuthStack />
     </NavigationContainer>
   );
 }

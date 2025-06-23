@@ -105,9 +105,26 @@ export default function DiarioScreen() {
             </Text>
 
             {emocoesSalvas[dataSelecionada] && (
-              <Text style={{ fontSize: 16, fontFamily: 'monospace', marginBottom: 10 }}>
-                Emoção do dia: {emocoesSalvas[dataSelecionada]}
-              </Text>
+              <View>
+                <Text style={{ fontSize: 18, fontFamily: 'monospace', marginBottom: 10 }}>
+                  Emoção do dia: {emocoesSalvas[dataSelecionada]}
+                </Text>
+              </View>
+            )}
+
+            {diariosSalvos[dataSelecionada] && (
+              <View>
+                <Text style={{ fontSize: 18, fontFamily: 'monospace', marginBottom: 10 }}>
+                  Diário do Dia:
+                </Text>
+                <View style={styles.box}>
+                  <ScrollView>
+                    <Text style={{ fontSize: 16, fontFamily: 'monospace', marginBottom: 10 }}>
+                      {diariosSalvos[dataSelecionada]}
+                    </Text> 
+                  </ScrollView>
+                </View>
+              </View>
             )}
           </ScrollView>
 
@@ -258,5 +275,19 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  box: {
+    width: 310,                        
+    maxHeight: 210,  
+    backgroundColor: 'white', 
+    borderRadius: 20,          
+    padding: 20,             
+    shadowColor: '#000',     
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.25,     
+    shadowRadius: 3.5,       
+    elevation: 5,   
+    overflow: 'hidden',    
+    flex: 1,     
   },
 });
