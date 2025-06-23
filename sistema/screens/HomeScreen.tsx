@@ -1,5 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Modal, StyleSheet, TextInput, Button, Switch, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  StyleSheet,
+  TextInput,
+  Button,
+  Switch,
+  Platform,
+  Alert,
+} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import styles from '../styles/globalStyles';
 import viciosDisponiveis from '../data/vicios';
@@ -12,38 +24,49 @@ interface VicioSelecionado {
   icon: any;
   cor: string;
   dataInicio: Date;
+  descricao?: string;
 }
 
 export default function HomeScreen() {
   const [viciosSelecionados, setViciosSelecionados] = useState<VicioSelecionado[]>([]);
   const [modalVisivel, setModalVisivel] = useState(false);
   const [modalPersonalizadoVisivel, setModalPersonalizadoVisivel] = useState(false);
+  const [modalInfoVisivel, setModalInfoVisivel] = useState(false);
+
+  const [vicioSelecionadoInfo, setVicioSelecionadoInfo] = useState<VicioSelecionado | null>(null);
+  const [descricao, setDescricao] = useState('');
 
   const [nomePersonalizado, setNomePersonalizado] = useState('');
   const [corPersonalizada, setCorPersonalizada] = useState('#FF6B6B');
   const [usarDataAtual, setUsarDataAtual] = useState(true);
   const [dataPersonalizada, setDataPersonalizada] = useState(new Date());
   const [mostrarDatePicker, setMostrarDatePicker] = useState(false);
-  const iconesDisponiveis = [
-    'smoking-ban',
-    'wine-bottle',
-    'gamepad',
-    'mobile-alt',
-    'coffee',
-    'hamburger',
-    'cannabis',
-    'beer',
-    'tv',
-    'shopping-cart',
-    'heartbeat',
-    'plus',
-  ];
   const [iconeSelecionado, setIcone] = useState('smoking-ban');
 
+  const iconesDisponiveis = [
+    'smoking-ban', 'wine-bottle', 'gamepad', 'mobile-alt', 'coffee',
+    'hamburger', 'cannabis', 'beer', 'tv', 'shopping-cart', 'heartbeat', 'plus',
+  ];
+
+  useEffect(() => {
+    if (vicioSelecionadoInfo) {
+      setDescricao(vicioSelecionadoInfo.descricao || '');
+    }
+  }, [vicioSelecionadoInfo]);
 
   const viciosRestantes = viciosDisponiveis.filter(
     v => !viciosSelecionados.find(sel => sel.id === v.id)
   );
+
+  const formatarTempo = (inicio: Date) => {
+    const agora = new Date();
+    const diff = agora.getTime() - new Date(inicio).getTime();
+    const segundos = Math.floor(diff / 1000) % 60;
+    const minutos = Math.floor(diff / (1000 * 60)) % 60;
+    const horas = Math.floor(diff / (1000 * 60 * 60)) % 24;
+    const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+    return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+  };
 
   const adicionarVicio = (id: string) => {
     const vicioBase = viciosDisponiveis.find(v => v.id === id);
@@ -65,12 +88,45 @@ export default function HomeScreen() {
       icon: iconeSelecionado,
       cor: corPersonalizada,
       dataInicio: usarDataAtual ? new Date() : dataPersonalizada,
+      descricao: descricao,
     };
     setViciosSelecionados([...viciosSelecionados, novo]);
     setModalPersonalizadoVisivel(false);
     setNomePersonalizado('');
     setUsarDataAtual(true);
     setDataPersonalizada(new Date());
+    setDescricao('');
+  };
+
+  const atualizarDescricao = () => {
+    if (!vicioSelecionadoInfo) return;
+    setViciosSelecionados(prev =>
+      prev.map(v =>
+        v.id === vicioSelecionadoInfo.id ? { ...v, descricao } : v
+      )
+    );
+  };
+
+  const resetarTempo = () => {
+    if (!vicioSelecionadoInfo) return;
+    Alert.alert(
+      'Confirmar Recaída',
+      `Você deseja resetar o tempo do vício "${vicioSelecionadoInfo.nome}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Confirmar',
+          onPress: () => {
+            setViciosSelecionados(prev =>
+              prev.map(v =>
+                v.id === vicioSelecionadoInfo.id ? { ...v, dataInicio: new Date() } : v
+              )
+            );
+            setModalInfoVisivel(false);
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -85,7 +141,15 @@ export default function HomeScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
           {viciosSelecionados.map(vicio => (
-            <VicioCard key={vicio.id} vicio={vicio} />
+            <TouchableOpacity
+              key={vicio.id}
+              onPress={() => {
+                setVicioSelecionadoInfo(vicio);
+                setModalInfoVisivel(true);
+              }}
+            >
+              <VicioCard vicio={vicio} />
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}
@@ -94,6 +158,7 @@ export default function HomeScreen() {
         <Text style={estilos.botaoTexto}>+ Novo Vício</Text>
       </TouchableOpacity>
 
+      {/* Modais: seleção, personalizado e info */}
       {/* Modal de seleção */}
       <Modal visible={modalVisivel} animationType="slide" transparent={true}>
         <View style={estilos.modalContainer}>
@@ -215,6 +280,43 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal de informações */}
+      <Modal visible={modalInfoVisivel} animationType="slide" transparent={true}>
+        <View style={estilos.modalContainer}>
+          <View style={[estilos.modalContent, { maxHeight: '90%' }]}>
+            {vicioSelecionadoInfo && (
+              <>
+                <Text style={{ fontWeight: 'bold', fontSize: 18 }}>Vício: {vicioSelecionadoInfo.nome}</Text>
+                <Text style={{ marginTop: 20 }}>Tempo passado: {formatarTempo(vicioSelecionadoInfo.dataInicio)}</Text>
+                <Text style={{ marginTop: 10 }}>Início: {new Date(vicioSelecionadoInfo.dataInicio).toLocaleDateString()}</Text>
+
+                <Text style={{ marginTop: 10, marginBottom: 5 }}>Descrição (opcional):</Text>
+                <TextInput
+                  multiline
+                  placeholder="Escreva algo sobre esse vício..."
+                  value={descricao}
+                  onChangeText={setDescricao}
+                  onBlur={atualizarDescricao}
+                  style={[estilos.input, { height: 80 }]} // () => setModalInfoVisivel(false)
+                  // resetarTempo
+                />
+
+                {/* Botão fixo na parte de baixo do modal */}
+                <TouchableOpacity style={estilos.botaoRecaida} onPress={resetarTempo}>
+                  <Text style={estilos.botaoRecaidaTexto}>Recaída</Text>
+                </TouchableOpacity>
+
+                {/* Botão "Fechar", se você quiser que continue onde está, abaixo também */}
+                <TouchableOpacity onPress={() => setModalInfoVisivel(false)}>
+                  <Text style={{ color: 'gray', textAlign: 'center', marginTop: 15 }}>Fechar</Text>
+                </TouchableOpacity>
+
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -246,7 +348,15 @@ const estilos = StyleSheet.create({
     padding: 20,
     borderRadius: 16,
     width: '80%',
-    maxHeight: '80%',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 10,
+    backgroundColor: '#f9f9f9',
   },
   cardAdicionar: {
     backgroundColor: 'rgba(0,0,0,0.05)',
@@ -259,17 +369,18 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconeAdicionar: {
-    fontSize: 40,
-    color: '#777',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
+  botaoRecaida: {
+    backgroundColor: '#2b8a3e',
+    alignSelf: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginBottom: 10,
-    backgroundColor: '#f9f9f9',
+    marginTop: 20,
   },
+  botaoRecaidaTexto: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  
 });
