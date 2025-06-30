@@ -6,7 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
-  Platform
+  Platform,
 } from 'react-native';
 
 import * as Animatable from 'react-native-animatable';
@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 
 type NavigationProps = NativeStackNavigationProp<StackParamList>;
 
-export default function SignIn() {
+export default function SignUp() {
   const navigation = useNavigation<NavigationProps>();
 
   return (
@@ -25,11 +25,18 @@ export default function SignIn() {
       style={styles.container}
     >
       <Animatable.View animation="fadeInLeft" delay={300} style={styles.containerHeader}>
-        <Text style={styles.message}>Bem-vindo(a) de volta</Text>
-        <Text style={styles.subMessage}>Vamos continuar sua jornada de bem-estar</Text>
+        <Text style={styles.message}>Crie sua conta</Text>
+        <Text style={styles.subMessage}>Junte-se à nossa jornada de bem-estar</Text>
       </Animatable.View>
 
       <Animatable.View animation="fadeInUp" delay={600} style={styles.containerForm}>
+        <Text style={styles.label}>Nome</Text>
+        <TextInput
+          placeholder="Digite seu nome"
+          placeholderTextColor="#999"
+          style={styles.input}
+        />
+
         <Text style={styles.label}>Email</Text>
         <TextInput
           placeholder="Digite seu email"
@@ -40,18 +47,20 @@ export default function SignIn() {
 
         <Text style={styles.label}>Senha</Text>
         <TextInput
-          placeholder="Digite sua senha"
+          placeholder="Crie uma senha"
           placeholderTextColor="#999"
           secureTextEntry
           style={styles.input}
         />
 
         <TouchableOpacity style={styles.button} onPress={() => navigation.replace('MainApp')}>
-          <Text style={styles.buttonText}>Acessar</Text>
+          <Text style={styles.buttonText}>Cadastrar</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.registerContainer} onPress={() => navigation.navigate('SignUp')}>
-          <Text style={styles.registerText}>Não possui uma conta? <Text style={styles.registerLink}>Cadastre-se</Text></Text>
+        <TouchableOpacity style={styles.registerContainer} onPress={() => navigation.goBack()}>
+          <Text style={styles.registerText}>
+            Já possui uma conta? <Text style={styles.registerLink}>Entrar</Text>
+          </Text>
         </TouchableOpacity>
       </Animatable.View>
     </KeyboardAvoidingView>
@@ -61,7 +70,7 @@ export default function SignIn() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#3EB489', // tom de verde mais suave
+    backgroundColor: '#3EB489',
   },
   containerHeader: {
     flex: 1,
