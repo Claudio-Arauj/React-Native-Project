@@ -1,14 +1,22 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, TextInput, Button } from 'react-native';
-import styles from '../styles/globalStyles';
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, FlatList, TouchableOpacity, StyleSheet,
+  Modal, TextInput, Button
+} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { MetaHabito } from '../models/metaHabito';
+import styles from '../styles/globalStyles';
+
+import { getAuth } from 'firebase/auth';
+import app from '../firebase-config';
+
+import { MetaHabito } from '../models/habito';
+import { adicionarHabito, observarHabitos } from '../services/habitoService';
 
 export default function HabitosScreen() {
-  const [habitos, setHabitos] = useState<MetaHabito[]>([
-    new MetaHabito('1', 'usuario_1', 'Meditar', 'diária', new Date('2025-06-01'), '08:00'),
-    new MetaHabito('2', 'usuario_1', 'Ler livro', 'semanal', new Date('2025-05-28')),
-  ]);
+  const auth = getAuth(app);
+  const user = auth.currentUser;
+
+  const [habitos, setHabitos] = useState<MetaHabito[]>([]);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [nome, setNome] = useState('');
@@ -16,28 +24,38 @@ export default function HabitosScreen() {
   const [lembreteHorario, setLembreteHorario] = useState('');
   const [cor, setCor] = useState('');
 
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = observarHabitos(user.uid, setHabitos);
+    return () => unsubscribe();
+  }, [user]);
+
   const calcularDias = (data: Date): string => {
     const hoje = new Date();
     const diff = Math.floor((hoje.getTime() - data.getTime()) / (1000 * 60 * 60 * 24));
     return `${diff} dias atrás`;
   };
 
-  const adicionarHabito = () => {
-    const novoHabito = new MetaHabito(
-      `${Date.now()}`, // id único
-      'usuario_1',
+  const handleAdicionarHabito = async () => {
+    if (!user || !nome || !frequencia) return;
+
+    const novo = new MetaHabito(
+      '', // id será preenchido pelo Firestore
+      user.uid,
       nome,
-      frequencia as 'diária' | 'semanal', // <=== aqui
-      new Date(), // data de criação = agora
+      frequencia as 'diária' | 'semanal',
+      new Date(),
       lembreteHorario || undefined,
       cor || undefined
     );
 
-    setHabitos((prev) => [...prev, novoHabito]);
+    await adicionarHabito(user.uid, novo);
     setModalVisible(false);
     setNome('');
     setFrequencia('');
     setLembreteHorario('');
+    setCor('');
   };
 
   const renderItem = ({ item }: { item: MetaHabito }) => (
@@ -47,7 +65,6 @@ export default function HabitosScreen() {
       <Text style={estilos.info}>Criado há: {calcularDias(item.criadoEm)}</Text>
       {item.lembreteHorario && <Text style={estilos.info}>Lembrete: {item.lembreteHorario}</Text>}
     </View>
-
   );
 
   return (
@@ -66,8 +83,8 @@ export default function HabitosScreen() {
         <Text style={estilos.botaoTexto}>+ Novo Hábito</Text>
       </TouchableOpacity>
 
-      {/* Modal para criação */}
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+      {/* Modal de criação */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={estilos.modalContainer}>
           <View style={estilos.modalContent}>
             <Text style={{ fontWeight: 'bold', fontSize: 18 }}>Novo Hábito</Text>
@@ -78,9 +95,10 @@ export default function HabitosScreen() {
               onChangeText={setNome}
               style={estilos.input}
             />
+
             <Picker
               selectedValue={frequencia}
-              onValueChange={(itemValue) => setFrequencia(itemValue as 'diária' | 'semanal')}
+              onValueChange={(val) => setFrequencia(val)}
               style={estilos.input}
             >
               <Picker.Item label="Selecione a frequência" value="" />
@@ -96,34 +114,32 @@ export default function HabitosScreen() {
             />
 
             <Text style={{ marginTop: 10, marginBottom: 5 }}>Escolha uma cor:</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 15 }}>
-                {[
-                  '#FF6B6B', '#FF8C42', '#FFD93D', '#6BCB77',
-                  '#4ECDC4', '#36A2EB', '#A29BFE', '#C77DFF',
-                  '#F67280', '#F8B195', '#55EFC4', '#FAB1A0'
-                ].map((c) => (
-                  <TouchableOpacity
-                    key={c}
-                    onPress={() => setCor(c)}
-                    style={{
-                      backgroundColor: c,
-                      width: 28,
-                      height: 28,
-                      borderRadius: 6,
-                      marginRight: 8,
-                      marginBottom: 8,
-                      borderWidth: cor === c ? 2 : 0,
-                      borderColor: 'black',
-                    }}
-                  />
-                ))}
-              </View>
-
-
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 15 }}>
+              {[
+                '#FF6B6B', '#FF8C42', '#FFD93D', '#6BCB77',
+                '#4ECDC4', '#36A2EB', '#A29BFE', '#C77DFF',
+                '#F67280', '#F8B195', '#55EFC4', '#FAB1A0',
+              ].map((c) => (
+                <TouchableOpacity
+                  key={c}
+                  onPress={() => setCor(c)}
+                  style={{
+                    backgroundColor: c,
+                    width: 28,
+                    height: 28,
+                    borderRadius: 6,
+                    marginRight: 8,
+                    marginBottom: 8,
+                    borderWidth: cor === c ? 2 : 0,
+                    borderColor: 'black',
+                  }}
+                />
+              ))}
+            </View>
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Button title="Cancelar" color="gray" onPress={() => setModalVisible(false)} />
-              <Button title="Salvar" onPress={adicionarHabito} />
+              <Button title="Salvar" onPress={handleAdicionarHabito} />
             </View>
           </View>
         </View>
