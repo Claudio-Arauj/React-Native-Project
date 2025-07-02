@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
-  Platform
+  Platform,
 } from 'react-native';
 
 import * as Animatable from 'react-native-animatable';
@@ -14,10 +14,39 @@ import { StackParamList } from '../styles/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 
+import app from '../firebase-config';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
 type NavigationProps = NativeStackNavigationProp<StackParamList>;
 
 export default function SignIn() {
   const navigation = useNavigation<NavigationProps>();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleLogin = async () => {
+    setErrorMessage('');
+
+    if (!email || !password) {
+      setErrorMessage('Preencha todos os campos.');
+      return;
+    }
+
+    const auth = getAuth(app);
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigation.replace('MainApp'); // Redireciona após login bem-sucedido
+    } catch (error: any) {
+      let msg = 'Erro ao fazer login.';
+      if (error.code === 'auth/invalid-email') msg = 'Email inválido.';
+      if (error.code === 'auth/user-not-found') msg = 'Usuário não encontrado.';
+      if (error.code === 'auth/wrong-password') msg = 'Senha incorreta.';
+      if (error.code === 'auth/network-request-failed') msg = 'Sem conexão com a internet.';
+      setErrorMessage(msg);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -30,12 +59,21 @@ export default function SignIn() {
       </Animatable.View>
 
       <Animatable.View animation="fadeInUp" delay={600} style={styles.containerForm}>
+
+        {/* Mensagem de erro */}
+        {errorMessage !== '' && (
+          <Text style={styles.errorMessage}>{errorMessage}</Text>
+        )}
+
         <Text style={styles.label}>Email</Text>
         <TextInput
           placeholder="Digite seu email"
           placeholderTextColor="#999"
           style={styles.input}
           keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
         />
 
         <Text style={styles.label}>Senha</Text>
@@ -44,14 +82,18 @@ export default function SignIn() {
           placeholderTextColor="#999"
           secureTextEntry
           style={styles.input}
+          value={password}
+          onChangeText={setPassword}
         />
 
-        <TouchableOpacity style={styles.button} onPress={() => navigation.replace('MainApp')}>
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Acessar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.registerContainer} onPress={() => navigation.navigate('SignUp')}>
-          <Text style={styles.registerText}>Não possui uma conta? <Text style={styles.registerLink}>Cadastre-se</Text></Text>
+          <Text style={styles.registerText}>
+            Não possui uma conta? <Text style={styles.registerLink}>Cadastre-se</Text>
+          </Text>
         </TouchableOpacity>
       </Animatable.View>
     </KeyboardAvoidingView>
@@ -61,7 +103,7 @@ export default function SignIn() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#3EB489', // tom de verde mais suave
+    backgroundColor: '#3EB489',
   },
   containerHeader: {
     flex: 1,
@@ -130,5 +172,12 @@ const styles = StyleSheet.create({
   registerLink: {
     color: '#3EB489',
     fontWeight: 'bold',
+  },
+  errorMessage: {
+    color: '#CC0000',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
   },
 });
