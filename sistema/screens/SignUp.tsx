@@ -16,6 +16,8 @@ import { useNavigation } from '@react-navigation/native';
 
 import app from '../firebase-config';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
+
 
 type NavigationProps = NativeStackNavigationProp<StackParamList>;
 
@@ -38,12 +40,22 @@ export default function SignUp() {
     }
 
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Salvar no Firestor
+      await setDoc(doc(db, 'usuarios', user.uid), {
+        nome: name,
+        email: user.email,
+        criadoEm: new Date().toISOString(),
+      });
+
       setSuccessMessage('Cadastro realizado com sucesso! Redirecionando...');
       setTimeout(() => {
-        navigation.replace('Login'); // volta para a tela de login
+        navigation.replace('Login');
       }, 2000);
     } catch (error: any) {
       console.log('Erro no cadastro:', error);

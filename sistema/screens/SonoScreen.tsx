@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,15 +7,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   Switch,
-  Button,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styles from '../styles/globalStyles';
 import { Sono } from '../models/sono';
-import { Icon } from 'react-native-vector-icons/Icon';
+import { adicionarSono, observarSonos } from '../services/sonoService';
+import { getAuth } from 'firebase/auth';
+import app from '../firebase-config';
 
-// Card de sono
 function SonoCard({ sono, onPress }: { sono: Sono; onPress: () => void }) {
   return (
     <TouchableOpacity style={estilos.card} onPress={onPress}>
@@ -27,7 +27,6 @@ function SonoCard({ sono, onPress }: { sono: Sono; onPress: () => void }) {
   );
 }
 
-// Modal com sugestões
 function ModalSugestoes({
   visible,
   onClose,
@@ -51,17 +50,15 @@ function ModalSugestoes({
   const sugestoes = calcularHorarios(baseTime);
 
   return (
-    <Modal visible={visible} transparent={true} animationType="fade">
+    <Modal visible={visible} transparent animationType="fade">
       <View style={estilos.modalOverlay}>
         <View style={estilos.modalContainer}>
           <Text style={estilos.modalTitulo}>Melhores horários para acordar</Text>
-
           {sugestoes.map((hora, i) => (
             <View key={i} style={estilos.horarioItem}>
               <Text style={estilos.horarioTexto}>{hora}</Text>
             </View>
           ))}
-
           <TouchableOpacity style={estilos.botaoFechar} onPress={onClose}>
             <Text style={estilos.botaoFecharTexto}>Fechar</Text>
           </TouchableOpacity>
@@ -72,6 +69,9 @@ function ModalSugestoes({
 }
 
 export default function SonoScreen() {
+  const auth = getAuth(app);
+  const user = auth.currentUser;
+
   const [horaSonoCadastro, setHoraSonoCadastro] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
   const [sonos, setSonos] = useState<Sono[]>([]);
@@ -79,17 +79,27 @@ export default function SonoScreen() {
   const [sonoSelecionado, setSonoSelecionado] = useState<Sono | null>(null);
   const [notificacoesAtivas, setNotificacoesAtivas] = useState(true);
 
-  const salvarHorarioSono = () => {
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = observarSonos(user.uid, setSonos);
+    return () => unsubscribe();
+  }, [user]);
+
+  const salvarHorarioSono = async () => {
+    if (!user) return;
     const horarioFormatado = horaSonoCadastro.toTimeString().split(' ')[0];
-    const novoSono = new Sono(
-      (sonos.length + 1).toString(),
-      'usuarioExemplo',
-      horarioFormatado,
-      notificacoesAtivas
-    );
-    setSonos((prev) => [...prev, novoSono]);
-    setShowPicker(false);
-    setNotificacoesAtivas(true);
+    try {
+      await adicionarSono(user.uid, {
+        userId: user.uid,
+        horarioDormir: horarioFormatado,
+        notificacoesAtivas,
+        criadoEm: new Date(),
+      });
+      setShowPicker(false);
+      setNotificacoesAtivas(true);
+    } catch (error) {
+      console.error('Erro ao salvar sono:', error);
+    }
   };
 
   return (
@@ -100,7 +110,7 @@ export default function SonoScreen() {
         <DateTimePicker
           value={horaSonoCadastro}
           mode="time"
-          is24Hour={true}
+          is24Hour
           display="default"
           onChange={(_, selected) => {
             setShowPicker(false);
@@ -108,13 +118,12 @@ export default function SonoScreen() {
           }}
         />
       )}
+
       <View style={estilos.cardContainer}>
-        {/* Linha: Ícone + hora */}
         <View style={estilos.linhaRelogio}>
           <TouchableOpacity style={estilos.botaoRelogio} onPress={() => setShowPicker(true)}>
             <Text style={estilos.iconeRelogio}>🕒</Text>
           </TouchableOpacity>
-
           <View style={{ marginLeft: 16 }}>
             <Text style={estilos.labelPequeno}>Hora escolhida</Text>
             <Text style={estilos.horaSelecionada}>
@@ -123,7 +132,6 @@ export default function SonoScreen() {
           </View>
         </View>
 
-        {/* Linha: Switch */}
         <View style={estilos.switchContainer}>
           <Text style={estilos.label}>Ativar notificações?</Text>
           <Switch
@@ -133,7 +141,6 @@ export default function SonoScreen() {
           />
         </View>
 
-        {/* Botão de salvar */}
         <TouchableOpacity style={estilos.botaoSalvar} onPress={salvarHorarioSono}>
           <Text style={estilos.textoBotaoSalvar}>Salvar Horário</Text>
         </TouchableOpacity>
@@ -192,12 +199,10 @@ const estilos = StyleSheet.create({
     elevation: 6,
     gap: 20,
   },
-
   linhaRelogio: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   botaoRelogio: {
     backgroundColor: '#2b8a3e',
     width: 50,
@@ -205,47 +210,36 @@ const estilos = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
     elevation: 3,
   },
-
   iconeRelogio: {
     fontSize: 22,
     color: '#fff',
   },
-
   labelPequeno: {
     fontSize: 14,
     color: '#888',
   },
-
   horaSelecionada: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#2b2b2b',
   },
-
   switchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-
   label: {
     fontSize: 16,
     color: '#333',
   },
-
   botaoSalvar: {
     backgroundColor: '#2b8a3e',
     paddingVertical: 14,
     borderRadius: 30,
     alignItems: 'center',
   },
-
   textoBotaoSalvar: {
     color: 'white',
     fontWeight: '600',
@@ -259,40 +253,13 @@ const estilos = StyleSheet.create({
     fontSize: 14,
     color: '#555',
   },
-  botao: {
-    backgroundColor: '#2b8a3e',
-    padding: 12,
-    marginHorizontal: 16,
-    marginVertical: 10,
-    borderRadius: 30,
-    alignItems: 'center',
-  },
-  botaoTexto: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  botaoCiclo: {
-    backgroundColor: '#2b8a3e',
-    padding: 14,
-    marginHorizontal: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    elevation: 4,
-  },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-
   modalContainer: {
     backgroundColor: '#fff',
     borderRadius: 20,
@@ -301,12 +268,7 @@ const estilos = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
   },
-
   modalTitulo: {
     fontSize: 20,
     fontWeight: '600',
@@ -314,7 +276,6 @@ const estilos = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-
   horarioItem: {
     backgroundColor: '#f1f3f5',
     paddingVertical: 10,
@@ -323,13 +284,11 @@ const estilos = StyleSheet.create({
     marginBottom: 8,
     alignItems: 'center',
   },
-
   horarioTexto: {
     fontSize: 16,
     color: '#333',
     fontWeight: '500',
   },
-
   botaoFechar: {
     backgroundColor: '#2b8a3e',
     marginTop: 16,
@@ -337,7 +296,6 @@ const estilos = StyleSheet.create({
     borderRadius: 30,
     alignItems: 'center',
   },
-
   botaoFecharTexto: {
     color: '#fff',
     fontSize: 16,

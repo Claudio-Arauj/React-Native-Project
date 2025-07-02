@@ -14,101 +14,132 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import styles from '../styles/globalStyles';
-import viciosDisponiveis from '../data/vicios';
 import VicioCard from '../components/VicioCard';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 
-interface VicioSelecionado {
-  id: string;
-  nome: string;
-  icon: any;
-  cor: string;
-  dataInicio: Date;
-  descricao?: string;
+import { getAuth } from 'firebase/auth';
+import app from '../firebase-config';
+
+import {
+  observarVicios,
+  adicionarVicio,
+  atualizarDescricao,
+  resetarDataInicio,
+} from '../services/vicioService';
+import { VicioSelecionado } from '../models/vicio';
+
+const ICONES_DISPONIVEIS = [
+  'smoking-ban',
+  'wine-bottle',
+  'gamepad',
+  'mobile-alt',
+  'coffee',
+  'hamburger',
+  'cannabis',
+  'beer',
+  'tv',
+  'shopping-cart',
+  'heartbeat',
+  'plus',
+];
+
+const CORES_DISPONIVEIS = [
+  '#FF6B6B',
+  '#FF8C42',
+  '#FFD93D',
+  '#6BCB77',
+  '#4ECDC4',
+  '#36A2EB',
+  '#A29BFE',
+  '#C77DFF',
+];
+
+function formatarTempo(inicio: Date) {
+  const agora = new Date();
+  const diff = agora.getTime() - new Date(inicio).getTime();
+  const segundos = Math.floor(diff / 1000) % 60;
+  const minutos = Math.floor(diff / (1000 * 60)) % 60;
+  const horas = Math.floor(diff / (1000 * 60 * 60)) % 24;
+  const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+  return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
 }
 
 export default function HomeScreen() {
+  const auth = getAuth(app);
+  const user = auth.currentUser;
+
   const [viciosSelecionados, setViciosSelecionados] = useState<VicioSelecionado[]>([]);
-  const [modalVisivel, setModalVisivel] = useState(false);
+
+  // Modais
   const [modalPersonalizadoVisivel, setModalPersonalizadoVisivel] = useState(false);
   const [modalInfoVisivel, setModalInfoVisivel] = useState(false);
 
+  // Vício selecionado para edição/visualização
   const [vicioSelecionadoInfo, setVicioSelecionadoInfo] = useState<VicioSelecionado | null>(null);
+
+  // Form de descrição no modal info
   const [descricao, setDescricao] = useState('');
 
+  // Form para adicionar novo vício personalizado
   const [nomePersonalizado, setNomePersonalizado] = useState('');
-  const [corPersonalizada, setCorPersonalizada] = useState('#FF6B6B');
+  const [corPersonalizada, setCorPersonalizada] = useState(CORES_DISPONIVEIS[0]);
   const [usarDataAtual, setUsarDataAtual] = useState(true);
   const [dataPersonalizada, setDataPersonalizada] = useState(new Date());
   const [mostrarDatePicker, setMostrarDatePicker] = useState(false);
-  const [iconeSelecionado, setIcone] = useState('smoking-ban');
+  const [iconeSelecionado, setIcone] = useState(ICONES_DISPONIVEIS[0]);
 
-  const iconesDisponiveis = [
-    'smoking-ban', 'wine-bottle', 'gamepad', 'mobile-alt', 'coffee',
-    'hamburger', 'cannabis', 'beer', 'tv', 'shopping-cart', 'heartbeat', 'plus',
-  ];
-
+  // Observar vícios do usuário
   useEffect(() => {
-    if (vicioSelecionadoInfo) {
-      setDescricao(vicioSelecionadoInfo.descricao || '');
-    }
-  }, [vicioSelecionadoInfo]);
+    if (!user) return;
 
-  const viciosRestantes = viciosDisponiveis.filter(
-    v => !viciosSelecionados.find(sel => sel.id === v.id)
-  );
+    const unsubscribe = observarVicios(user.uid, setViciosSelecionados);
 
-  const formatarTempo = (inicio: Date) => {
-    const agora = new Date();
-    const diff = agora.getTime() - new Date(inicio).getTime();
-    const segundos = Math.floor(diff / 1000) % 60;
-    const minutos = Math.floor(diff / (1000 * 60)) % 60;
-    const horas = Math.floor(diff / (1000 * 60 * 60)) % 24;
-    const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
-    return `${dias}d ${horas}h ${minutos}m ${segundos}s`;
-  };
+    return () => unsubscribe();
+  }, [user]);
 
-  const adicionarVicio = (id: string) => {
-    const vicioBase = viciosDisponiveis.find(v => v.id === id);
-    if (!vicioBase) return;
-
-    const novoVicio: VicioSelecionado = {
-      ...vicioBase,
-      dataInicio: new Date(),
-    };
-
-    setViciosSelecionados([...viciosSelecionados, novoVicio]);
-    setModalVisivel(false);
-  };
-
-  const adicionarVicioPersonalizado = () => {
-    const novo: VicioSelecionado = {
-      id: Date.now().toString(),
-      nome: nomePersonalizado || 'Novo Vício',
-      icon: iconeSelecionado,
-      cor: corPersonalizada,
-      dataInicio: usarDataAtual ? new Date() : dataPersonalizada,
-      descricao: descricao,
-    };
-    setViciosSelecionados([...viciosSelecionados, novo]);
-    setModalPersonalizadoVisivel(false);
+  // Resetar campos do form novo vício
+  const resetarFormNovoVicio = () => {
     setNomePersonalizado('');
+    setCorPersonalizada(CORES_DISPONIVEIS[0]);
     setUsarDataAtual(true);
     setDataPersonalizada(new Date());
     setDescricao('');
+    setIcone(ICONES_DISPONIVEIS[0]);
   };
 
-  const atualizarDescricao = () => {
-    if (!vicioSelecionadoInfo) return;
-    setViciosSelecionados(prev =>
-      prev.map(v =>
-        v.id === vicioSelecionadoInfo.id ? { ...v, descricao } : v
-      )
-    );
+  // Ações
+  const handleAdicionarVicio = async () => {
+    if (!user) return;
+
+    try {
+      await adicionarVicio(user.uid, {
+        nome: nomePersonalizado || 'Novo Vício',
+        icon: iconeSelecionado,
+        cor: corPersonalizada,
+        dataInicio: usarDataAtual ? new Date() : dataPersonalizada,
+        descricao,
+      });
+
+      setModalPersonalizadoVisivel(false);
+      resetarFormNovoVicio();
+    } catch (error) {
+      console.error('Erro ao adicionar vício:', error);
+    }
   };
 
-  const resetarTempo = () => {
-    if (!vicioSelecionadoInfo) return;
+  const handleAtualizarDescricao = async () => {
+    if (!user || !vicioSelecionadoInfo) return;
+
+    try {
+      await atualizarDescricao(user.uid, vicioSelecionadoInfo.id, descricao);
+    } catch (error) {
+      console.error('Erro ao atualizar descrição:', error);
+    }
+  };
+
+  const handleResetarTempo = async () => {
+    if (!user || !vicioSelecionadoInfo) return;
+
     Alert.alert(
       'Confirmar Recaída',
       `Você deseja resetar o tempo do vício "${vicioSelecionadoInfo.nome}"?`,
@@ -116,13 +147,13 @@ export default function HomeScreen() {
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Confirmar',
-          onPress: () => {
-            setViciosSelecionados(prev =>
-              prev.map(v =>
-                v.id === vicioSelecionadoInfo.id ? { ...v, dataInicio: new Date() } : v
-              )
-            );
-            setModalInfoVisivel(false);
+          onPress: async () => {
+            try {
+              await resetarDataInicio(user.uid, vicioSelecionadoInfo.id);
+              setModalInfoVisivel(false);
+            } catch (error) {
+              console.error('Erro ao resetar tempo:', error);
+            }
           },
         },
       ]
@@ -140,11 +171,12 @@ export default function HomeScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
-          {viciosSelecionados.map(vicio => (
+          {viciosSelecionados.map((vicio) => (
             <TouchableOpacity
               key={vicio.id}
               onPress={() => {
                 setVicioSelecionadoInfo(vicio);
+                setDescricao(vicio.descricao || '');
                 setModalInfoVisivel(true);
               }}
             >
@@ -154,49 +186,15 @@ export default function HomeScreen() {
         </ScrollView>
       )}
 
-      <TouchableOpacity style={estilos.botao} onPress={() => setModalVisivel(true)}>
+      <TouchableOpacity style={estilos.botao} onPress={() => setModalPersonalizadoVisivel(true)}>
         <Text style={estilos.botaoTexto}>+ Novo Vício</Text>
       </TouchableOpacity>
 
-      {/* Modais: seleção, personalizado e info */}
-      {/* Modal de seleção */}
-      <Modal visible={modalVisivel} animationType="slide" transparent={true}>
+      {/* Modal para adicionar novo vício */}
+      <Modal visible={modalPersonalizadoVisivel} animationType="slide" transparent>
         <View style={estilos.modalContainer}>
           <View style={estilos.modalContent}>
-            <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10 }}>Escolha um vício</Text>
-            <ScrollView style={{ maxHeight: 300 }}>
-              {viciosRestantes.map(vicio => (
-                <TouchableOpacity
-                  key={vicio.id}
-                  onPress={() => adicionarVicio(vicio.id)}
-                >
-                  <VicioCard vicio={vicio} mostrarTempo={false} />
-                </TouchableOpacity>
-              ))}
-              <TouchableOpacity
-                style={estilos.cardAdicionar}
-                onPress={() => {
-                  setModalVisivel(false);
-                  setTimeout(() => setModalPersonalizadoVisivel(true), 300); // animação suave
-                }}
-              >
-                <FontAwesome5 name="plus" size={30} color="#777" />
-                <Text style={{ textAlign: 'center', marginTop: 6 }}>Adicionar Vício</Text>
-              </TouchableOpacity>
-            </ScrollView>
-
-            <TouchableOpacity onPress={() => setModalVisivel(false)}>
-              <Text style={{ color: 'gray', textAlign: 'center', fontSize: 16 }}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal personalizado */}
-      <Modal visible={modalPersonalizadoVisivel} animationType="slide" transparent={true}>
-        <View style={estilos.modalContainer}>
-          <View style={estilos.modalContent}>
-            <Text style={{ fontWeight: 'bold', fontSize: 18 }}>Novo Vício</Text>
+            <Text style={estilos.modalTitulo}>Novo Vício</Text>
 
             <TextInput
               placeholder="Nome do vício"
@@ -205,57 +203,55 @@ export default function HomeScreen() {
               style={estilos.input}
             />
 
-            <Text style={{ marginTop: 10, marginBottom: 5 }}>Escolha uma cor:</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 15 }}>
-              {[ '#FF6B6B', '#FF8C42', '#FFD93D', '#6BCB77', '#4ECDC4', '#36A2EB', '#A29BFE', '#C77DFF' ].map((c) => (
+            <Text style={estilos.label}>Escolha uma cor:</Text>
+            <View style={estilos.paletaCores}>
+              {CORES_DISPONIVEIS.map((cor) => (
                 <TouchableOpacity
-                  key={c}
-                  onPress={() => setCorPersonalizada(c)}
-                  style={{
-                    backgroundColor: c,
-                    width: 28,
-                    height: 28,
-                    borderRadius: 6,
-                    marginRight: 8,
-                    marginBottom: 8,
-                    borderWidth: corPersonalizada === c ? 2 : 0,
-                    borderColor: 'black',
-                  }}
+                  key={cor}
+                  onPress={() => setCorPersonalizada(cor)}
+                  style={[
+                    estilos.corSelecionada,
+                    { backgroundColor: cor },
+                    corPersonalizada === cor && estilos.corSelecionadaAtiva,
+                  ]}
                 />
               ))}
             </View>
 
-            <Text style={{ marginTop: 10, marginBottom: 5 }}>Escolha um ícone:</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-              {iconesDisponiveis.map((icone) => (
+            <Text style={estilos.label}>Escolha um ícone:</Text>
+            <View style={estilos.paletaIcones}>
+              {ICONES_DISPONIVEIS.map((icone) => (
                 <TouchableOpacity
                   key={icone}
                   onPress={() => setIcone(icone)}
-                  style={{
-                    width: 50,
-                    height: 50,
-                    borderRadius: 10,
-                    backgroundColor: icone === iconeSelecionado ? '#2b8a3e' : '#eee',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    margin: 6,
-                  }}
+                  style={[
+                    estilos.iconeSelecionado,
+                    { backgroundColor: icone === iconeSelecionado ? '#2b8a3e' : '#eee' },
+                  ]}
                 >
-                  <FontAwesome5 name={icone} size={24} color={icone === iconeSelecionado ? '#fff' : '#333'} />
+                  <FontAwesome5
+                    name={icone}
+                    size={24}
+                    color={icone === iconeSelecionado ? '#fff' : '#333'}
+                  />
                 </TouchableOpacity>
               ))}
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
+            <View style={estilos.switchContainer}>
               <Text>Usar data atual:</Text>
-              <Switch value={usarDataAtual} onValueChange={setUsarDataAtual} style={{ marginLeft: 10 }} />
+              <Switch
+                value={usarDataAtual}
+                onValueChange={setUsarDataAtual}
+                style={{ marginLeft: 10 }}
+              />
             </View>
 
             {!usarDataAtual && (
               <>
                 <TouchableOpacity
                   onPress={() => setMostrarDatePicker(true)}
-                  style={[estilos.input, { justifyContent: 'center' }]}
+                  style={[estilos.input, estilos.datePickerButton]}
                 >
                   <Text>{dataPersonalizada.toLocaleDateString()}</Text>
                 </TouchableOpacity>
@@ -273,45 +269,52 @@ export default function HomeScreen() {
               </>
             )}
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
-              <Button title="Cancelar" color="gray" onPress={() => setModalPersonalizadoVisivel(false)} />
-              <Button title="Salvar" onPress={adicionarVicioPersonalizado} />
+            <View style={estilos.modalBotoes}>
+              <Button
+                title="Cancelar"
+                color="gray"
+                onPress={() => {
+                  setModalPersonalizadoVisivel(false);
+                  resetarFormNovoVicio();
+                }}
+              />
+              <Button title="Salvar" onPress={handleAdicionarVicio} />
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* Modal de informações */}
-      <Modal visible={modalInfoVisivel} animationType="slide" transparent={true}>
+      {/* Modal para exibir e editar informações do vício */}
+      <Modal visible={modalInfoVisivel} animationType="slide" transparent>
         <View style={estilos.modalContainer}>
           <View style={[estilos.modalContent, { maxHeight: '90%' }]}>
             {vicioSelecionadoInfo && (
               <>
-                <Text style={{ fontWeight: 'bold', fontSize: 18 }}>Vício: {vicioSelecionadoInfo.nome}</Text>
-                <Text style={{ marginTop: 20 }}>Tempo passado: {formatarTempo(vicioSelecionadoInfo.dataInicio)}</Text>
-                <Text style={{ marginTop: 10 }}>Início: {new Date(vicioSelecionadoInfo.dataInicio).toLocaleDateString()}</Text>
+                <Text style={estilos.modalTitulo}>Vício: {vicioSelecionadoInfo.nome}</Text>
+                <Text style={{ marginTop: 20 }}>
+                  Tempo passado: {formatarTempo(vicioSelecionadoInfo.dataInicio)}
+                </Text>
+                <Text style={{ marginTop: 10 }}>
+                  Início: {new Date(vicioSelecionadoInfo.dataInicio).toLocaleDateString()}
+                </Text>
 
-                <Text style={{ marginTop: 10, marginBottom: 5 }}>Descrição (opcional):</Text>
+                <Text style={[estilos.label, { marginTop: 10 }]}>Descrição (opcional):</Text>
                 <TextInput
                   multiline
                   placeholder="Escreva algo sobre esse vício..."
                   value={descricao}
                   onChangeText={setDescricao}
-                  onBlur={atualizarDescricao}
-                  style={[estilos.input, { height: 80 }]} // () => setModalInfoVisivel(false)
-                  // resetarTempo
+                  onBlur={handleAtualizarDescricao}
+                  style={[estilos.input, { height: 80 }]}
                 />
 
-                {/* Botão fixo na parte de baixo do modal */}
-                <TouchableOpacity style={estilos.botaoRecaida} onPress={resetarTempo}>
+                <TouchableOpacity style={estilos.botaoRecaida} onPress={handleResetarTempo}>
                   <Text style={estilos.botaoRecaidaTexto}>Recaída</Text>
                 </TouchableOpacity>
 
-                {/* Botão "Fechar", se você quiser que continue onde está, abaixo também */}
                 <TouchableOpacity onPress={() => setModalInfoVisivel(false)}>
-                  <Text style={{ color: 'gray', textAlign: 'center', marginTop: 15 }}>Fechar</Text>
+                  <Text style={estilos.fecharTexto}>Fechar</Text>
                 </TouchableOpacity>
-
               </>
             )}
           </View>
@@ -349,6 +352,10 @@ const estilos = StyleSheet.create({
     borderRadius: 16,
     width: '80%',
   },
+  modalTitulo: {
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -358,16 +365,53 @@ const estilos = StyleSheet.create({
     marginBottom: 10,
     backgroundColor: '#f9f9f9',
   },
-  cardAdicionar: {
-    backgroundColor: 'rgba(0,0,0,0.05)',
+  label: {
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  paletaCores: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 15,
+  },
+  corSelecionada: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  corSelecionadaAtiva: {
     borderWidth: 2,
-    borderColor: '#aaa',
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    padding: 20,
-    marginVertical: 8,
-    alignItems: 'center',
+    borderColor: 'black',
+  },
+  paletaIcones: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 10,
+  },
+  iconeSelecionado: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
     justifyContent: 'center',
+    alignItems: 'center',
+    margin: 6,
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  datePickerButton: {
+    justifyContent: 'center',
+  },
+  modalBotoes: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
   },
   botaoRecaida: {
     backgroundColor: '#2b8a3e',
@@ -382,5 +426,9 @@ const estilos = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  
+  fecharTexto: {
+    color: 'gray',
+    textAlign: 'center',
+    marginTop: 15,
+  },
 });
