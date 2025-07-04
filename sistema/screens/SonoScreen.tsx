@@ -9,20 +9,31 @@ import {
   Switch,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styles from '../styles/globalStyles';
 import { Sono } from '../models/sono';
-import { adicionarSono, observarSonos } from '../services/sonoService';
+import { adicionarSono, observarSonos, excluirSono } from '../services/sonoService';
 import { getAuth } from 'firebase/auth';
 import app from '../firebase-config';
 
+
 function SonoCard({ sono, onPress }: { sono: Sono; onPress: () => void }) {
   return (
-    <TouchableOpacity style={estilos.card} onPress={onPress}>
-      <Text style={estilos.nome}>Dormir às {sono.horarioDormir}</Text>
-      <Text style={estilos.info}>
-        Notificações: {sono.notificacoesAtivas ? 'Ativas' : 'Desativadas'}
-      </Text>
+    <TouchableOpacity
+      style={[estilos.card, { elevation: 3 }]}
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View>
+          <Text style={estilos.nome}>Dormir às {sono.horarioDormir}</Text>
+          <Text style={estilos.info}>
+            Notificações: {sono.notificacoesAtivas ? 'Ativas' : 'Desativadas'}
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={24} color="#999" />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -31,10 +42,12 @@ function ModalSugestoes({
   visible,
   onClose,
   baseTime,
+  onDelete,
 }: {
   visible: boolean;
   onClose: () => void;
   baseTime: string;
+  onDelete: () => void;
 }) {
   const calcularHorarios = (horaBase: string) => {
     const [h, m, s] = horaBase.split(':').map(Number);
@@ -62,6 +75,12 @@ function ModalSugestoes({
           <TouchableOpacity style={estilos.botaoFechar} onPress={onClose}>
             <Text style={estilos.botaoFecharTexto}>Fechar</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[estilos.botaoFechar, { backgroundColor: '#ff6b6b', marginTop: 8 }]}
+            onPress={onDelete}
+          >
+            <Text style={estilos.botaoFecharTexto}>Excluir</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -78,6 +97,7 @@ export default function SonoScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [sonoSelecionado, setSonoSelecionado] = useState<Sono | null>(null);
   const [notificacoesAtivas, setNotificacoesAtivas] = useState(true);
+  const [confirmarExclusao, setConfirmarExclusao] = useState<Sono | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -102,9 +122,23 @@ export default function SonoScreen() {
     }
   };
 
+  const handleExcluirSono = async () => {
+    if (!user || !confirmarExclusao) return;
+    try {
+      await excluirSono(user.uid, confirmarExclusao.id);
+      setConfirmarExclusao(null);
+      setSonoSelecionado(null);
+    } catch (error) {
+      console.error('Erro ao excluir sono:', error);
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#e6e6e6' }]}>
       <Text style={[styles.titulo, { color: '#2b8a3e' }]}>Horários de Sono</Text>
+      <Text style={{ marginHorizontal: 16, marginBottom: 8, color: '#666' }}>
+        Toque em um horário para ver sugestões de acordar ou excluir
+      </Text>
 
       <FlatList
         data={sonos}
@@ -114,7 +148,6 @@ export default function SonoScreen() {
             sono={item}
             onPress={() => {
               setSonoSelecionado(item);
-              setModalVisible(true);
             }}
           />
         )}
@@ -163,7 +196,25 @@ export default function SonoScreen() {
         visible={!!sonoSelecionado}
         onClose={() => setSonoSelecionado(null)}
         baseTime={sonoSelecionado?.horarioDormir || '00:00:00'}
+        onDelete={() => setConfirmarExclusao(sonoSelecionado)}
       />
+
+      {/* Modal de confirmação de exclusão */}
+      <Modal visible={!!confirmarExclusao} transparent animationType="fade">
+        <View style={estilos.modalOverlay}>
+          <View style={estilos.modalContainer}>
+            <Text style={estilos.modalTitulo}>Deseja realmente excluir este horário?</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+              <TouchableOpacity onPress={() => setConfirmarExclusao(null)}>
+                <Text style={{ color: 'gray', fontWeight: '600' }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleExcluirSono}>
+                <Text style={{ color: '#ff6b6b', fontWeight: '600' }}>Excluir</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {showPicker && (
         <DateTimePicker
