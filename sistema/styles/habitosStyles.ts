@@ -1,17 +1,34 @@
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
-  card: {
-    backgroundColor: '#f5f5f5',
-    padding: 16,
-    borderRadius: 12,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 2,
-  },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#2b8a3e',
+        fontFamily: 'monospace',
+        marginTop: 4,
+        textAlign: 'center',
+    },
+    subtitle: {
+        fontSize: 14, // menor que o título
+        fontWeight: '500', // menos ênfase
+        color: '#6e6e6e', // cinza mais claro
+        fontFamily: 'monospace',
+        marginTop: 2,
+        textAlign: 'center',
+    },
+
+    card: {
+        backgroundColor: '#f5f5f5',
+        padding: 16,
+        borderRadius: 12,
+        marginVertical: 8,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 2,
+    },
   nome: {
     fontSize: 18,
     fontWeight: 'bold',

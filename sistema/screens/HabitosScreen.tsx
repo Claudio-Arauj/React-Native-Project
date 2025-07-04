@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  Modal, TextInput, Button
+  Modal, TextInput, Button, Alert
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import styles from '../styles/globalStyles';
@@ -11,7 +11,7 @@ import { getAuth } from 'firebase/auth';
 import app from '../firebase-config';
 
 import { MetaHabito } from '../models/habito';
-import { adicionarHabito, observarHabitos } from '../services/habitoService';
+import { adicionarHabito, observarHabitos, excluirHabito } from '../services/habitoService';
 import HabitoCard from '../components/HabitoCard';
 
 export default function HabitosScreen() {
@@ -54,15 +54,44 @@ export default function HabitosScreen() {
     setCor('');
   };
 
+  const handleExcluirHabito = (id: string) => {
+    Alert.alert(
+      'Excluir Hábito',
+      'Tem certeza que deseja excluir este hábito?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            if (!user) return;
+            try {
+              await excluirHabito(user.uid, id);
+            } catch (error) {
+              console.error('Erro ao excluir hábito:', error);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+
+
   const renderItem = ({ item }: { item: MetaHabito }) => (
-    <HabitoCard habito={item} />
+    <HabitoCard habito={item} onDelete={handleExcluirHabito} />
   );
+
 
 
   return (
     <View style={[styles.container, { backgroundColor: '#e6e6e6', flex: 1 }]}>
-      <Text style={[styles.titulo, { color: '#2b8a3e' }]}>Hábitos</Text>
-      <Text style={styles.subtitulo}>Crie e acompanhe seus hábitos saudáveis aqui.</Text>
+      <Text style={estilos.title}>Hábitos</Text>
+      <Text style={estilos.subtitle}>Crie e acompanhe seus hábitos saudáveis aqui.</Text>
 
       <FlatList
         data={habitos}
