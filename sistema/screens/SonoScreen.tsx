@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styles from '../styles/globalStyles';
 import { Sono } from '../models/sono';
@@ -21,12 +22,13 @@ import app from '../firebase-config';
 function SonoCard({ sono, onPress }: { sono: Sono; onPress: () => void }) {
   return (
     <TouchableOpacity
-      style={[estilos.card, { elevation: 3 }]}
+      style={[estilos.card, estilos.sonoCard, { elevation: 3 }]}
       activeOpacity={0.7}
       onPress={onPress}
     >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Feather name="moon" size={20} color="#7e57c2" style={{ marginRight: 10 }} />
+        <View style={{ flex: 1 }}>
           <Text style={estilos.nome}>Dormir às {sono.horarioDormir}</Text>
           <Text style={estilos.info}>
             Notificações: {sono.notificacoesAtivas ? 'Ativas' : 'Desativadas'}
@@ -65,27 +67,31 @@ function ModalSugestoes({
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={estilos.modalOverlay}>
-        <View style={estilos.modalContainer}>
-          <Text style={estilos.modalTitulo}>Melhores horários para acordar</Text>
-          {sugestoes.map((hora, i) => (
-            <View key={i} style={estilos.horarioItem}>
-              <Text style={estilos.horarioTexto}>{hora}</Text>
-            </View>
-          ))}
-          <TouchableOpacity style={estilos.botaoFechar} onPress={onClose}>
-            <Text style={estilos.botaoFecharTexto}>Fechar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[estilos.botaoFechar, { backgroundColor: '#ff6b6b', marginTop: 8 }]}
-            onPress={onDelete}
-          >
-            <Text style={estilos.botaoFecharTexto}>Excluir</Text>
-          </TouchableOpacity>
+        <View style={estilos.modalBonito}>
+          <MaterialCommunityIcons name="weather-night" size={42} color="#7e57c2" style={{ alignSelf: 'center', marginBottom: 8 }} />
+          <Text style={estilos.modalTituloBonito}>Sugestões para acordar bem</Text>
+          <View style={estilos.sugestoesContainer}>
+            {sugestoes.map((hora, i) => (
+              <View key={i} style={estilos.horarioItemBonito}>
+                <Text style={estilos.horarioTextoBonito}>{hora}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={estilos.botoesModal}>
+            <TouchableOpacity style={[estilos.botaoBonito, { backgroundColor: '#ccc' }]} onPress={onClose}>
+              <Text style={estilos.botaoTextoBonito}>Fechar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[estilos.botaoBonito, { backgroundColor: '#ff6b6b' }]} onPress={onDelete}>
+              <Text style={estilos.botaoTextoBonito}>Excluir</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
   );
 }
+
 
 export default function SonoScreen() {
   const auth = getAuth(app);
@@ -251,8 +257,7 @@ const estilos = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 16,
     borderRadius: 12,
-    marginVertical: 6,
-    marginHorizontal: 12,
+    marginVertical: 8,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
@@ -344,4 +349,66 @@ const estilos = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  sonoCard: {
+  borderLeftWidth: 5,
+  borderLeftColor: '#7e57c2', // roxo suave
+},
+modalBonito: {
+  backgroundColor: '#e6e6e6',
+  borderRadius: 24,
+  padding: 24,
+  width: '100%',
+  maxWidth: 400,
+  alignItems: 'center',
+},
+
+modalTituloBonito: {
+  fontSize: 20,
+  fontWeight: 'bold',
+  color: '#2b2b2b',
+  marginBottom: 16,
+  textAlign: 'center',
+},
+
+sugestoesContainer: {
+  width: '100%',
+  marginBottom: 24,
+},
+
+horarioItemBonito: {
+  backgroundColor: '#fff',
+  paddingVertical: 10,
+  paddingHorizontal: 16,
+  borderRadius: 12,
+  marginBottom: 8,
+  alignItems: 'center',
+},
+
+horarioTextoBonito: {
+  fontSize: 16,
+  fontWeight: '500',
+  color: '#5e35b1',
+},
+
+botoesModal: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  width: '100%',
+  gap: 10,
+},
+
+botaoBonito: {
+  flex: 1,
+  paddingVertical: 12,
+  borderRadius: 30,
+  alignItems: 'center',
+},
+
+botaoTextoBonito: {
+  color: '#fff',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
+
+
 });
