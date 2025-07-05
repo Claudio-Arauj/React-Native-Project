@@ -254,6 +254,7 @@ const estilos = StyleSheet.create({
         textAlign: 'center',
     },
   card: {
+    minHeight: 120,
     backgroundColor: '#fff',
     padding: 16,
     borderRadius: 12,
