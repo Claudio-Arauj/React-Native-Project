@@ -135,10 +135,8 @@ export default function SonoScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#e6e6e6' }]}>
-      <Text style={[styles.titulo, { color: '#2b8a3e' }]}>Horários de Sono</Text>
-      <Text style={{ marginHorizontal: 16, marginBottom: 8, color: '#666' }}>
-        Toque em um horário para ver sugestões de acordar ou excluir
-      </Text>
+      <Text style={estilos.title}>Horários de Sono</Text>
+      <Text style={estilos.subtitle}> Toque em um horário para ver sugestões de acordar ou excluir </Text>
 
       <FlatList
         data={sonos}
@@ -233,6 +231,22 @@ export default function SonoScreen() {
 }
 
 const estilos = StyleSheet.create({
+  title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#3a3a3a',
+        fontFamily: 'monospace',
+        marginTop: 4,
+        textAlign: 'center',
+    },
+    subtitle: {
+        fontSize: 14, // menor que o título
+        fontWeight: '500', // menos ênfase
+        color: '#6e6e6e', // cinza mais claro
+        fontFamily: 'monospace',
+        marginTop: 2,
+        textAlign: 'center',
+    },
   card: {
     backgroundColor: '#fff',
     padding: 16,

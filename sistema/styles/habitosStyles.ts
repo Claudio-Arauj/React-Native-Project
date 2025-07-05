@@ -4,7 +4,7 @@ export default StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#2b8a3e',
+        color: '#3a3a3a',
         fontFamily: 'monospace',
         marginTop: 4,
         textAlign: 'center',

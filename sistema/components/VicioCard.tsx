@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import styles from '../styles/globalStyles';
+import styles from '../styles/viciosStyles';
 
 interface Props {
   vicio: {
@@ -53,12 +53,14 @@ export default function VicioCard({ vicio, mostrarTempo = true }: Props) {
   }, [vicio.dataInicio, mostrarTempo]);
 
   return (
-    <View style={[styles.cardSelecionadoVicio, { backgroundColor: vicio.cor }]}>
-      <FontAwesome5 name={vicio.icon} size={24} color="white" style={{ marginRight: 10 }} />
-      <View>
-        <Text style={styles.nomeSelecionado}>{vicio.nome}</Text>
+    <View style={[styles.card, { borderLeftColor: vicio.cor }]}>
+      <View style={styles.iconeContainer}>
+        <FontAwesome5 name={vicio.icon} size={20} color={vicio.cor} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.nome}>{vicio.nome}</Text>
         {mostrarTempo && tempo && (
-          <Text style={{ color: 'white', fontSize: 14 }}>{tempo} sem consumir</Text>
+          <Text style={styles.tempo}>{tempo} sem consumir</Text>
         )}
       </View>
     </View>

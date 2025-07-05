@@ -1,88 +1,146 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Image, StyleSheet } from 'react-native';
+import * as Animatable from 'react-native-animatable';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import styles from '../styles/globalStyles';
+import { getAuth } from 'firebase/auth';
+import app from '../firebase-config';
+
+import { observarHabitos } from '../services/habitoService';
+import { buscarDiarios } from '../services/diarioService';
+import { observarSonos } from '../services/sonoService';
+import { observarVicios } from '../services/vicioService';
+
+import { MetaHabito } from '../models/habito';
+import { VicioSelecionado } from '../models/vicio';
+import { Diario } from '../models/diario';
+import { Sono } from '../models/sono';
 
 export default function HomeScreen() {
-  const user = {
-    nome: 'Bruno Costa',
-    email: 'bruno@email.com',
-    criado_em: new Date('2025-04-01'),
-    avatar: 'https://i.pravatar.cc/150?img=12',
-  };
+  const auth = getAuth(app);
+  const user = auth.currentUser;
 
-  const goals = [
-    { id: '1', nome: 'Meditar' },
-    { id: '2', nome: 'Ler livro' },
-  ];
+  const [habitos, setHabitos] = useState<MetaHabito[]>([]);
+  const [reflexoes, setReflexoes] = useState<Diario[]>([]);
+  const [vicios, setVicios] = useState<VicioSelecionado[]>([]);
+  const [sono, setSono] = useState<Sono | null>(null);
 
-  const goalProgress = [
-    { goal_id: '1', concluido: true },
-    { goal_id: '1', concluido: false },
-    { goal_id: '2', concluido: true },
-  ];
+  useEffect(() => {
+    if (!user) return;
 
-  const reflexoes = [
-    { sentimento: 4 }, { sentimento: 2 },
-  ];
+    const unsubHabitos = observarHabitos(user.uid, setHabitos);
+    const unsubVicios = observarVicios(user.uid, setVicios);
 
-  const adictions = [
-    { nome: 'Café', gasto: 60.5 },
-  ];
+    const unsubSonos = observarSonos(user.uid, (dados) => {
+      if (dados.length > 0) {
+        const agora = new Date();
+        const agoraMinutos = agora.getHours() * 60 + agora.getMinutes();
 
-  const sleepSchedule = { horario_dormir: '22:30', notificacoes_ativas: true };
+        // Converte o horário de dormir para minutos e acha o mais próximo
+        const maisProximo = dados.reduce((prev, atual) => {
+          const [h, m] = atual.horarioDormir.split(':').map(Number);
+          const minutos = h * 60 + m;
+          const diffAtual = Math.abs(minutos - agoraMinutos);
+          const [hPrev, mPrev] = prev.horarioDormir.split(':').map(Number);
+          const diffPrev = Math.abs(hPrev * 60 + mPrev - agoraMinutos);
+          return diffAtual < diffPrev ? atual : prev;
+        });
+
+        setSono(maisProximo);
+      }
+    });
+
+    buscarDiarios().then((diarios) => {
+      const lista = Object.values(diarios || {});
+      setReflexoes(lista);
+    });
+
+    return () => {
+      unsubHabitos?.();
+      unsubVicios?.();
+      unsubSonos?.();
+    };
+  }, [user]);
+
+
+  if (!user) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Carregando usuário...</Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#f2f2f2' }} contentContainerStyle={{ paddingBottom: 30 }}>
-      {/* Header */}
+    <ScrollView style={{ flex: 1, backgroundColor: '#f2f2f2' }} contentContainerStyle={{ paddingBottom: 140 }}>
+      {/* Cabeçalho com avatar */}
       <View style={modern.avatarContainer}>
-        <Image source={{ uri: user.avatar }} style={modern.avatar} />
-        <Text style={modern.nome}>{user.nome}</Text>
-        <Text style={modern.email}>{user.email}</Text>
+        <Animatable.Image
+          animation="flipInY"
+          source={require('../assets/logo.png')}
+          resizeMode="contain"
+          style={modern.logo}
+        />
+        <View style={modern.emailContainer}>
+          <Ionicons name="mail-outline" size={16} color="#2b8a3e" style={{ marginRight: 6 }} />
+          <Text style={modern.email}>{user.email}</Text>
+        </View>
       </View>
 
-      {/* Cards */}
+      {/* Resumo */}
       <View style={modern.card}>
         <Text style={modern.cardTitle}>Resumo</Text>
         <View style={modern.statsRow}>
           <View style={modern.stat}>
-            <Ionicons name="checkmark-circle" size={26} color="#2b8a3e" />
-            <Text style={modern.statValue}>{goals.length}</Text>
-            <Text style={modern.statLabel}>Metas</Text>
+            <Ionicons name="leaf" size={26} color="#2b8a3e" />
+            <Text style={modern.statValue}>{habitos.length}</Text>
+            <Text style={modern.statLabel}>Hábitos</Text>
           </View>
           <View style={modern.stat}>
-            <MaterialCommunityIcons name="progress-check" size={26} color="#2b8a3e" />
-            <Text style={modern.statValue}>
-              {goalProgress.filter(p => p.concluido).length}
-            </Text>
-            <Text style={modern.statLabel}>Concluídas</Text>
-          </View>
-          <View style={modern.stat}>
-            <Ionicons name="calendar" size={26} color="#2b8a3e" />
+            <MaterialCommunityIcons name="emoticon-happy-outline" size={26} color="#2b8a3e" />
             <Text style={modern.statValue}>{reflexoes.length}</Text>
             <Text style={modern.statLabel}>Reflexões</Text>
+          </View>
+          <View style={modern.stat}>
+            <Ionicons name="cafe" size={26} color="#2b8a3e" />
+            <Text style={modern.statValue}>{vicios.length}</Text>
+            <Text style={modern.statLabel}>Vícios</Text>
           </View>
         </View>
       </View>
 
+      {/* Saúde e bem-estar */}
       <View style={modern.card}>
         <Text style={modern.cardTitle}>Saúde e Bem-estar</Text>
         <View style={modern.row}>
           <Text style={modern.label}>Dormir às:</Text>
-          <Text style={modern.value}>{sleepSchedule.horario_dormir}h</Text>
+          <Text style={modern.value}>{sono?.horarioDormir || '--'}h</Text>
         </View>
         <View style={modern.row}>
           <Text style={modern.label}>Notificações:</Text>
-          <Text style={modern.value}>{sleepSchedule.notificacoes_ativas ? 'Ativas' : 'Desativadas'}</Text>
+          <Text style={modern.value}>{sono?.notificacoesAtivas ? 'Ativas' : 'Desativadas'}</Text>
         </View>
-        <View style={modern.row}>
-          <Text style={modern.label}>Vícios:</Text>
-          <Text style={modern.value}>{adictions.length}</Text>
-        </View>
-        <View style={modern.row}>
-          <Text style={modern.label}>Gasto estimado:</Text>
-          <Text style={modern.value}>R$ {adictions.reduce((s, a) => s + a.gasto, 0).toFixed(2)}</Text>
-        </View>
+      </View>
+
+      {/* Lista de hábitos */}
+      <View style={modern.card}>
+        <Text style={modern.cardTitle}>Seus hábitos</Text>
+        {habitos.map((habito) => (
+          <View key={habito.id} style={modern.habitItem}>
+            <Ionicons name="checkmark-circle-outline" size={18} color="#2b8a3e" />
+            <Text style={modern.habitText}>{habito.nome}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Lista de vícios */}
+      <View style={modern.card}>
+        <Text style={modern.cardTitle}>Seus vícios</Text>
+        {vicios.map((vicio) => (
+          <View key={vicio.id} style={modern.habitItem}>
+            <Ionicons name="alert-circle-outline" size={18} color="#c0392b" />
+            <Text style={modern.habitText}>{vicio.nome}</Text>
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
@@ -113,10 +171,6 @@ const modern = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: '#2b8a3e',
-  },
-  email: {
-    fontSize: 14,
-    color: '#555',
   },
   card: {
     backgroundColor: '#fff',
@@ -166,4 +220,34 @@ const modern = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
   },
+  habitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  habitText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#2b2b2b',
+  },
+  logo: {
+  width: 100,
+  height: 100,
+  marginBottom: 12,
+},
+
+emailContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#eafbea',
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+  borderRadius: 20,
+},
+
+email: {
+  fontSize: 14,
+  color: '#2b8a3e',
+  fontWeight: '600',
+},
 });

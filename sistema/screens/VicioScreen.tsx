@@ -162,8 +162,8 @@ export default function VicioScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: '#e6e6e6', flex: 1 }]}>
-      <Text style={[styles.titulo, { color: '#2b8a3e' }]}>Vícios</Text>
-      <Text style={styles.subtitulo}>Monitore os vícios que deseja superar.</Text>
+      <Text style={estilos.title}>Vícios</Text>
+      <Text style={estilos.subtitle}>Monitore os vícios que deseja superar.</Text>
 
       {viciosSelecionados.length === 0 ? (
         <View style={{ alignItems: 'center', marginTop: 40 }}>
@@ -325,6 +325,22 @@ export default function VicioScreen() {
 }
 
 const estilos = StyleSheet.create({
+  title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#3a3a3a',
+        fontFamily: 'monospace',
+        marginTop: 4,
+        textAlign: 'center',
+    },
+    subtitle: {
+        fontSize: 14, // menor que o título
+        fontWeight: '500', // menos ênfase
+        color: '#6e6e6e', // cinza mais claro
+        fontFamily: 'monospace',
+        marginTop: 2,
+        textAlign: 'center',
+    },
   botao: {
     position: 'absolute',
     bottom: 140,
