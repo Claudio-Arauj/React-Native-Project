@@ -9,6 +9,7 @@ import { observarHabitos } from '../services/habitoService';
 import { buscarDiarios } from '../services/diarioService';
 import { observarSonos } from '../services/sonoService';
 import { observarVicios } from '../services/vicioService';
+import { buscarMensagensMotivacionais } from '../services/mensagensService';
 
 import { MetaHabito } from '../models/habito';
 import { VicioSelecionado } from '../models/vicio';
@@ -23,6 +24,19 @@ export default function HomeScreen() {
   const [reflexoes, setReflexoes] = useState<Diario[]>([]);
   const [vicios, setVicios] = useState<VicioSelecionado[]>([]);
   const [sono, setSono] = useState<Sono | null>(null);
+  const [mensagemAtual, setMensagemAtual] = useState<string>('');
+
+  useEffect(() => {
+    async function carregarMensagens() {
+      const mensagens = await buscarMensagensMotivacionais();
+      if (mensagens.length > 0) {
+        const idx = Math.floor(Math.random() * mensagens.length);
+        setMensagemAtual(mensagens[idx]);
+      }
+    }
+
+    carregarMensagens();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -84,6 +98,11 @@ export default function HomeScreen() {
           <Ionicons name="mail-outline" size={16} color="#2b8a3e" style={{ marginRight: 6 }} />
           <Text style={modern.email}>{user.email}</Text>
         </View>
+      </View>
+
+      <View style={modern.caixaMensagem}>
+        <Ionicons name="happy-outline" size={24} color="#6a0dad" style={{ marginRight: 10 }} />
+        <Text style={modern.mensagemTexto}>{mensagemAtual || 'Carregando mensagem...'}</Text>
       </View>
 
       {/* Resumo */}
@@ -250,4 +269,27 @@ email: {
   color: '#2b8a3e',
   fontWeight: '600',
 },
+caixaMensagem: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#f3e8ff', // lilás clarinho
+  padding: 12,
+  marginHorizontal: 20,
+  marginBottom: 16,
+  borderRadius: 16,
+  shadowColor: '#6a0dad',
+  shadowOpacity: 0.15,
+  shadowOffset: { width: 0, height: 3 },
+  shadowRadius: 6,
+  elevation: 4,
+},
+
+mensagemTexto: {
+  flex: 1,
+  fontSize: 16,
+  fontStyle: 'italic',
+  color: '#6a0dad',
+  fontWeight: '600',
+},
+
 });
