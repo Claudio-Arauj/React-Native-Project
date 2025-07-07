@@ -2,6 +2,7 @@ import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import Feather from "@expo/vector-icons/Feather";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Animated, {
@@ -95,6 +96,8 @@ const CustomNavBar: React.FC<BottomTabBarProps> = ({
         return <Feather name="book-open" size={18} color={color} />;
         case "Perfil":
         return <FontAwesome6 name="circle-user" size={18} color={color} />;
+        case "Vicios":
+        return <FontAwesome5 name="smoking-ban" size={18} color={color} />;
         default:
         return <Feather name="help-circle" size={18} color={color} />;
     }

@@ -1,4 +1,4 @@
-import { getFirestore, collection, addDoc, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, query, onSnapshot, deleteDoc, doc, orderBy } from 'firebase/firestore';
 import app from '../firebase-config';
 import { Sono } from '../models/sono';
 
@@ -10,6 +10,11 @@ export const adicionarSono = async (userId: string, sono: Omit<Sono, 'id'>) => {
     criadoEm: new Date(),
   });
   return docRef.id;
+};
+
+export const excluirSono = async (userId: string, sonoId: string) => {
+  const ref = doc(db, `usuarios/${userId}/sonos/${sonoId}`);
+  await deleteDoc(ref);
 };
 
 export const observarSonos = (
@@ -32,3 +37,4 @@ export const observarSonos = (
     callback(dados);
   });
 };
+
