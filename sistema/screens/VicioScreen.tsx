@@ -25,6 +25,7 @@ import {
   adicionarVicio,
   atualizarDescricao,
   resetarDataInicio,
+  excluirVicio,
 } from '../services/vicioService';
 import { VicioSelecionado } from '../models/vicio';
 
@@ -160,6 +161,30 @@ export default function VicioScreen() {
     );
   };
 
+  const handleExcluirVicio = (id: string) => {
+    Alert.alert(
+      'Excluir Vício',
+      'Tem certeza que deseja excluir este vício?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            if (!user) return;
+            try {
+              await excluirVicio(user.uid, id);
+            } catch (error) {
+              console.error('Erro ao excluir vício:', error);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+  
+
   return (
     <View style={[styles.container, { backgroundColor: '#e6e6e6', flex: 1 }]}>
       <Text style={estilos.title}>Vícios</Text>
@@ -180,7 +205,7 @@ export default function VicioScreen() {
                 setModalInfoVisivel(true);
               }}
             >
-              <VicioCard vicio={vicio} />
+              <VicioCard key={vicio.id} vicio={vicio} onDelete={handleExcluirVicio}/>
             </TouchableOpacity>
           ))}
         </ScrollView>

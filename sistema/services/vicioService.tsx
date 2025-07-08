@@ -1,4 +1,4 @@
-import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, Timestamp, deleteDoc } from 'firebase/firestore';
 import app from '../firebase-config';
 import { VicioSelecionado } from '../models/vicio';
 
@@ -39,4 +39,9 @@ export async function atualizarDescricao(userId: string, vicioId: string, descri
 export async function resetarDataInicio(userId: string, vicioId: string) {
   const vicioRef = doc(db, 'usuarios', userId, 'vicios', vicioId);
   await updateDoc(vicioRef, { dataInicio: Timestamp.now() });
+}
+
+export async function excluirVicio(userId: string, vicioId: string) {
+  const vicioRef = doc(db, 'usuarios', userId, 'vicios', vicioId);
+  await deleteDoc(vicioRef);
 }

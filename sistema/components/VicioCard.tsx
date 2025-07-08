@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { FontAwesome5, Feather } from '@expo/vector-icons';
 import styles from '../styles/viciosStyles';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
     dataInicio?: Date;
   };
   mostrarTempo?: boolean;
+  onDelete?: (id: string) => void; // <- nova prop opcional
 }
 
 const formatarDuracao = (inicio: Date): string => {
@@ -37,7 +38,7 @@ const formatarDuracao = (inicio: Date): string => {
   return partes.join(' ');
 };
 
-export default function VicioCard({ vicio, mostrarTempo = true }: Props) {
+export default function VicioCard({ vicio, mostrarTempo = true, onDelete }: Props) {
   const [tempo, setTempo] = useState(
     vicio.dataInicio ? formatarDuracao(vicio.dataInicio) : ''
   );
@@ -54,11 +55,21 @@ export default function VicioCard({ vicio, mostrarTempo = true }: Props) {
 
   return (
     <View style={[styles.card, { borderLeftColor: vicio.cor }]}>
-      <View style={styles.iconeContainer}>
-        <FontAwesome5 name={vicio.icon} size={20} color={vicio.cor} />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <View style={styles.iconeContainer}>
+          <FontAwesome5 name={vicio.icon} size={20} color={vicio.cor} />
+        </View>
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.nome}>{vicio.nome}</Text>
+
+      <View style={{ marginTop: 6 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Text style={styles.nome}>{vicio.nome}</Text>
+          {onDelete && (
+          <TouchableOpacity onPress={() => onDelete(vicio.id)}>
+            <Feather name="trash-2" size={18} color="#e74c3c" />
+          </TouchableOpacity>
+          )}
+        </View>
         {mostrarTempo && tempo && (
           <Text style={styles.tempo}>{tempo} sem consumir</Text>
         )}
