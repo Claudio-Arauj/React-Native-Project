@@ -17,30 +17,10 @@ import { Sono } from '../models/sono';
 import { adicionarSono, observarSonos, excluirSono } from '../services/sonoService';
 import { getAuth } from 'firebase/auth';
 import app from '../firebase-config';
+import SonoCard from '../components/SonoCard';
 
 import estilos from '../styles/sonoStyles'
 
-
-function SonoCard({ sono, onPress }: { sono: Sono; onPress: () => void }) {
-  return (
-    <TouchableOpacity
-      style={[estilos.card, estilos.sonoCard, { elevation: 3 }]}
-      activeOpacity={0.7}
-      onPress={onPress}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Feather name="moon" size={20} color="#7e57c2" style={{ marginRight: 10 }} />
-        <View style={{ flex: 1 }}>
-          <Text style={estilos.nome}>Dormir às {sono.horarioDormir}</Text>
-          <Text style={estilos.info}>
-            Notificações: {sono.notificacoesAtivas ? 'Ativas' : 'Desativadas'}
-          </Text>
-        </View>
-        <Feather name="chevron-right" size={24} color="#999" />
-      </View>
-    </TouchableOpacity>
-  );
-}
 
 function ModalSugestoes({
   visible,
@@ -54,9 +34,9 @@ function ModalSugestoes({
   onDelete: () => void;
 }) {
   const calcularHorarios = (horaBase: string) => {
-    const [h, m, s] = horaBase.split(':').map(Number);
+    const [h, m] = horaBase.split(':').map(Number);
     const baseDate = new Date();
-    baseDate.setHours(h, m, s || 0);
+    baseDate.setHours(h, m, 0);
     const ciclos = [1.5, 3, 4.5, 6, 7.5, 9];
     return ciclos.map((c) => {
       const acordar = new Date(baseDate.getTime() + c * 60 * 60 * 1000);
@@ -115,7 +95,7 @@ export default function SonoScreen() {
 
   const salvarHorarioSono = async () => {
     if (!user) return;
-    const horarioFormatado = horaSonoCadastro.toTimeString().split(' ')[0];
+    const horarioFormatado = horaSonoCadastro.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     try {
       await adicionarSono(user.uid, {
         userId: user.uid,

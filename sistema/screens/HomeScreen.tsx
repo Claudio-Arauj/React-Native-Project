@@ -10,11 +10,13 @@ import { buscarDiarios } from '../services/diarioService';
 import { observarSonos } from '../services/sonoService';
 import { observarVicios } from '../services/vicioService';
 import { buscarMensagensMotivacionais } from '../services/mensagensService';
+import { buscarUsuario } from '../services/usuarioService';
 
 import { MetaHabito } from '../models/habito';
 import { VicioSelecionado } from '../models/vicio';
 import { Diario } from '../models/diario';
 import { Sono } from '../models/sono';
+import { Usuario } from '../models/usuario';
 
 import modern from '../styles/homeStyle'
 
@@ -22,6 +24,7 @@ export default function HomeScreen() {
   const auth = getAuth(app);
   const user = auth.currentUser;
 
+  const [nome, setNome] = useState<string>('');
   const [habitos, setHabitos] = useState<MetaHabito[]>([]);
   const [reflexoes, setReflexoes] = useState<Diario[]>([]);
   const [vicios, setVicios] = useState<VicioSelecionado[]>([]);
@@ -70,6 +73,12 @@ export default function HomeScreen() {
       setReflexoes(lista);
     });
 
+    buscarUsuario(user.uid).then((usuario) => {
+      if (usuario) {
+        setNome(usuario.nome);
+      }
+    });
+
     return () => {
       unsubHabitos?.();
       unsubVicios?.();
@@ -97,8 +106,8 @@ export default function HomeScreen() {
           style={modern.logo}
         />
         <View style={modern.emailContainer}>
-          <Ionicons name="mail-outline" size={16} color="#2b8a3e" style={{ marginRight: 6 }} />
-          <Text style={modern.email}>{user.email}</Text>
+          <Ionicons name="person-circle-outline" size={18} color="#2b8a3e" style={{ marginRight: 6 }} />
+          <Text style={modern.email}>Bem-vindo, {nome || 'usuário'}!</Text>
         </View>
       </View>
 
