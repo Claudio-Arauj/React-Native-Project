@@ -17,7 +17,7 @@ import { VicioSelecionado } from '../models/vicio';
 import { Diario } from '../models/diario';
 import { Sono } from '../models/sono';
 import { Usuario } from '../models/usuario';
-
+import { ImageBackground } from 'react-native'; 
 import modern from '../styles/homeStyle'
 
 export default function HomeScreen() {
@@ -98,23 +98,26 @@ export default function HomeScreen() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#f2f2f2' }} contentContainerStyle={{ paddingBottom: 140 }}>
       {/* Cabeçalho com avatar */}
-      <View style={modern.avatarContainer}>
-        <Animatable.Image
-          animation="flipInY"
-          source={require('../assets/logo.png')}
-          resizeMode="contain"
-          style={modern.logo}
-        />
-        <View style={modern.emailContainer}>
-          <Ionicons name="person-circle-outline" size={18} color="#2b8a3e" style={{ marginRight: 6 }} />
-          <Text style={modern.email}>Bem-vindo, {nome || 'usuário'}!</Text>
+      <ImageBackground
+        source={{ uri: `https://picsum.photos/800/300?random=${Date.now()}` }}
+        style={modern.avatarContainer}
+        resizeMode="cover"
+      >
+        <View style={modern.overlay}> {/* Para escurecer e dar contraste ao texto */}
+          <Animatable.Image
+            animation="flipInY"
+            source={require('../assets/logo.png')} // se quiser manter a logo no topo
+            resizeMode="contain"
+            style={modern.logo}
+          />
+          <View style={modern.emailContainer}>
+            <Ionicons name="person-circle-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+            <Text style={[modern.email, { color: '#fff' }]}>
+              Bem-vindo, {nome || 'usuário'}!
+            </Text>
+          </View>
         </View>
-      </View>
-
-      <View style={modern.caixaMensagem}>
-        <Ionicons name="happy-outline" size={24} color="#6a0dad" style={{ marginRight: 10 }} />
-        <Text style={modern.mensagemTexto}>{mensagemAtual || 'Carregando mensagem...'}</Text>
-      </View>
+      </ImageBackground>
 
       {/* Resumo */}
       <View style={modern.card}>

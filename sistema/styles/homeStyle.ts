@@ -2,17 +2,47 @@ import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
   avatarContainer: {
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 30,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-    marginBottom: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-  },
+  height: 200,
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: 16,
+  borderRadius: 20,
+  overflow: 'hidden',
+  marginHorizontal: 16,
+  marginTop: 16,
+  marginBottom: 16,
+  backgroundColor: '#fff', // fallback se imagem falhar
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+  elevation: 5,
+},
+overlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0, 0, 0, 0.4)', // escurece a imagem
+  width: '100%',
+  justifyContent: 'center',
+  alignItems: 'center',
+  borderRadius: 10,
+},
+
+logo: {
+  width: 80,
+  height: 80,
+  marginBottom: 8,
+},
+
+emailContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+
+email: {
+  fontSize: 16,
+  color: '#fff',
+  fontWeight: 'bold',
+},
   avatar: {
     width: 100,
     height: 100,
@@ -84,26 +114,11 @@ export default StyleSheet.create({
     fontSize: 14,
     color: '#2b2b2b',
   },
-  logo: {
-  width: 100,
-  height: 100,
-  marginBottom: 12,
-},
+  
 
-emailContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: '#eafbea',
-  paddingVertical: 6,
-  paddingHorizontal: 12,
-  borderRadius: 20,
-},
 
-email: {
-  fontSize: 14,
-  color: '#2b8a3e',
-  fontWeight: '600',
-},
+
+
 caixaMensagem: {
   flexDirection: 'row',
   alignItems: 'center',
