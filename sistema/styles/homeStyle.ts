@@ -114,10 +114,6 @@ email: {
     fontSize: 14,
     color: '#2b2b2b',
   },
-  
-
-
-
 
 caixaMensagem: {
   flexDirection: 'row',

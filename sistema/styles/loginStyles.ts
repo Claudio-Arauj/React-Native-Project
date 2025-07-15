@@ -1,6 +1,15 @@
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
+  motivacional: {
+  fontSize: 16,
+  fontStyle: 'italic',
+  color: '#6a0dad',
+  textAlign: 'center',
+  marginHorizontal: 20,
+  marginBottom: 20,
+},
+
   container: {
     flex: 1,
     backgroundColor: '#3EB489',
@@ -80,4 +89,26 @@ export default StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
+  caixaMensagem: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#f3e8ff', // lilás clarinho
+  padding: 12,
+  marginHorizontal: 20,
+  marginBottom: 16,
+  borderRadius: 16,
+  shadowColor: '#6a0dad',
+  shadowOpacity: 0.15,
+  shadowOffset: { width: 0, height: 3 },
+  shadowRadius: 6,
+  elevation: 4,
+},
+
+mensagemTexto: {
+  flex: 1,
+  fontSize: 16,
+  fontStyle: 'italic',
+  color: '#6a0dad',
+  fontWeight: '600',
+},
 });
