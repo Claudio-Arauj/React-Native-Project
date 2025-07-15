@@ -103,10 +103,10 @@ export default function HomeScreen() {
         style={modern.avatarContainer}
         resizeMode="cover"
       >
-        <View style={modern.overlay}> {/* Para escurecer e dar contraste ao texto */}
+        <View style={modern.overlay}> 
           <Animatable.Image
             animation="flipInY"
-            source={require('../assets/logo.png')} // se quiser manter a logo no topo
+            source={require('../assets/logo.png')} 
             resizeMode="contain"
             style={modern.logo}
           />
@@ -118,6 +118,11 @@ export default function HomeScreen() {
           </View>
         </View>
       </ImageBackground>
+
+      <View style={modern.caixaMensagem}>
+        <Ionicons name="happy-outline" size={24} color="#6a0dad" style={{ marginRight: 10 }} />
+        <Text style={modern.mensagemTexto}>{mensagemAtual || 'Carregando mensagem...'}</Text>
+      </View>
 
       {/* Resumo */}
       <View style={modern.card}>

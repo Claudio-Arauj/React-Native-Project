@@ -19,6 +19,10 @@ import styles from '../styles/loginStyles'
 import app from '../firebase-config';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
+import { useEffect } from 'react';
+import { buscarMensagemAleatoria, inicializarBanco } from '../data/bancoSq';
+
+
 type NavigationProps = NativeStackNavigationProp<StackParamList>;
 
 export default function SignIn() {
@@ -26,6 +30,20 @@ export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  const [mensagem, setMensagem] = useState('');
+
+  useEffect(() => {
+    async function carregarMensagem() {
+      await inicializarBanco();
+      const texto = await buscarMensagemAleatoria();
+      if (texto) setMensagem(texto);
+    }
+
+    carregarMensagem();
+  }, []);
+
+
 
   const handleLogin = async () => {
     setErrorMessage('');
@@ -56,6 +74,14 @@ export default function SignIn() {
       style={styles.container}
     >
       <Animatable.View animation="fadeInLeft" delay={300} style={styles.containerHeader}>
+
+        {mensagem !== '' && (
+          <Animatable.View animation="fadeIn" delay={500} style={styles.caixaMensagem}>
+            <Text style={styles.mensagemTexto}>{mensagem}</Text>
+          </Animatable.View>
+        )}
+
+
         <Text style={styles.message}>Bem-vindo(a) de volta</Text>
         <Text style={styles.subMessage}>Vamos continuar sua jornada de bem-estar</Text>
       </Animatable.View>
